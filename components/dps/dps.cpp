@@ -109,8 +109,8 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   // >>>
   this->voltage_setting_previous = voltage_setting;
   this->current_setting_previous = current_setting;
-  ESP_LOGI(TAG, "Voltage_setting_previous: " + this->voltage_setting_previous);
-  ESP_LOGI(TAG, "Current_setting_previous: " + this->current_setting_previous);
+  ESP_LOGI(TAG, "Voltage_setting_previous: %.1f", this->voltage_setting_previous);
+  ESP_LOGI(TAG, "Current_setting_previous: %.1f", this->current_setting_previous);
   // <<<
     
   //   4    0x0E 0x0E        Output voltage display value     3598 * 0.01 = 35.98V          0.01 V
