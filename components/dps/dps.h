@@ -110,8 +110,13 @@ class Dps : public PollingComponent, public modbus::ModbusDevice {
   text_sensor::TextSensor *device_model_text_sensor_;
 
   // >>>
+  int counter_status = 0; // Counter of status messages received since last counter reset  
   float voltage_setting_previous = 0.0;
   float current_setting_previous = 0.0;
+  float voltage_previous = 0.0;
+  float current_previous = 0.0;
+  bool key_lock_previous = false;
+  bool output_previous = false;
   // <<<
   void on_status_data_(const std::vector<uint8_t> &data);
   void on_acknowledge_data_(const std::vector<uint8_t> &data);
