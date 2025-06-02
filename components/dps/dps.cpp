@@ -118,13 +118,6 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   //this->publish_state_(this->current_setting_sensor_, current_setting);
   //this->publish_state_(this->current_setting_number_, current_setting);
 
-  // >>>
-  this->voltage_setting_previous = voltage_setting;
-  this->current_setting_previous = current_setting;
-  ESP_LOGI(TAG, "Voltage_setting_previous: %.1f", this->voltage_setting_previous);
-  ESP_LOGI(TAG, "Current_setting_previous: %.1f", this->current_setting_previous);
-  // <<<
-    
   //   4    0x0E 0x0E        Output voltage display value     3598 * 0.01 = 35.98V          0.01 V
   float voltage = (float) dps_get_16bit(4) * 0.01f;
   this->publish_state_(this->output_voltage_sensor_, voltage);
@@ -180,9 +173,6 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   //  22    0x13 0x9C        Product model                    5020 = DPS5020
   //  24    0x00 0x11        Firmware version                 17 * 0.1 = 1.7
   this->publish_state_(this->firmware_version_sensor_, dps_get_16bit(24) * 0.1f);
-  // >>>
-  ESP_LOGI(TAG, "Status frame processed!!!");
-  // <<<
 }
 
 void Dps::update() {
