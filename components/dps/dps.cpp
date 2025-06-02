@@ -98,13 +98,25 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   // Byte   Address Content: Description                      Decoded content               Coeff./Unit
   //   0    0x0E 0x10        Voltage setting                  3600 * 0.01 = 36.00V          0.01 V
   float voltage_setting = dps_get_16bit(0) * 0.01f;
-  this->publish_state_(this->voltage_setting_sensor_, voltage_setting);
-  this->publish_state_(this->voltage_setting_number_, voltage_setting);
+  if (voltage_setting != this->voltage_setting_previous) {
+    ESP_LOGI(TAG, "Voltage_setting: %.1f -> %.1f", this->voltage_setting_previous, voltage_setting);
+    this->voltage_setting_previous = voltage_setting;
+    this->publish_state_(this->voltage_setting_sensor_, voltage_setting);
+    this->publish_state_(this->voltage_setting_number_, voltage_setting);
+  }
+  //this->publish_state_(this->voltage_setting_sensor_, voltage_setting);
+  //this->publish_state_(this->voltage_setting_number_, voltage_setting);
 
   //   2    0x03 0xE8        Current setting                  1000 * 0.01 = 10.00A          0.01 A
   float current_setting = (float) dps_get_16bit(2) * this->current_resolution_factor();
-  this->publish_state_(this->current_setting_sensor_, current_setting);
-  this->publish_state_(this->current_setting_number_, current_setting);
+  if (current_setting != this->current_setting_previous) {
+    ESP_LOGI(TAG, "Current_setting: %.1f -> %.1f", this->current_setting_previous, current_setting);
+    this->current_setting_previous = current_setting;
+    this->publish_state_(this->current_setting_sensor_, current_setting);
+    this->publish_state_(this->current_setting_number_, current_setting);
+  }
+  //this->publish_state_(this->current_setting_sensor_, current_setting);
+  //this->publish_state_(this->current_setting_number_, current_setting);
 
   // >>>
   this->voltage_setting_previous = voltage_setting;
