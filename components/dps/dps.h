@@ -109,6 +109,10 @@ class Dps : public PollingComponent, public modbus::ModbusDevice {
   text_sensor::TextSensor *protection_status_text_sensor_;
   text_sensor::TextSensor *device_model_text_sensor_;
 
+  // >>>
+  float voltage_setting_previous = 0f;
+  float current_setting_previous = 0f;
+  // <<<
   void on_status_data_(const std::vector<uint8_t> &data);
   void on_acknowledge_data_(const std::vector<uint8_t> &data);
   void publish_state_(binary_sensor::BinarySensor *binary_sensor, const bool &state);
