@@ -61,6 +61,11 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   };
 
   ESP_LOGI(TAG, "Status frame received");
+  this->counter_status++;
+  if (this->counter_status > 30) {
+    this->counter_status = 0;
+    ESP_LOGI(TAG, "Status frame counter reset");
+  }
 
   // Set device model & current resolution based on reported model
   uint16_t model_number = dps_get_16bit(22);
@@ -99,7 +104,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   //   0    0x0E 0x10        Voltage setting                  3600 * 0.01 = 36.00V          0.01 V
   float voltage_setting = dps_get_16bit(0) * 0.01f;
   if (voltage_setting != this->voltage_setting_previous) {
-    ESP_LOGI(TAG, "Voltage_setting: %.1f -> %.1f", this->voltage_setting_previous, voltage_setting);
+    ESP_LOGI(TAG, "Voltage_setting: %.2f -> %.2f", this->voltage_setting_previous, voltage_setting);
     this->voltage_setting_previous = voltage_setting;
     this->publish_state_(this->voltage_setting_sensor_, voltage_setting);
     this->publish_state_(this->voltage_setting_number_, voltage_setting);
@@ -110,7 +115,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   //   2    0x03 0xE8        Current setting                  1000 * 0.01 = 10.00A          0.01 A
   float current_setting = (float) dps_get_16bit(2) * this->current_resolution_factor();
   if (current_setting != this->current_setting_previous) {
-    ESP_LOGI(TAG, "Current_setting: %.1f -> %.1f", this->current_setting_previous, current_setting);
+    ESP_LOGI(TAG, "Current_setting: %.2f -> %.2f", this->current_setting_previous, current_setting);
     this->current_setting_previous = current_setting;
     this->publish_state_(this->current_setting_sensor_, current_setting);
     this->publish_state_(this->current_setting_number_, current_setting);
@@ -120,11 +125,21 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
 
   //   4    0x0E 0x0E        Output voltage display value     3598 * 0.01 = 35.98V          0.01 V
   float voltage = (float) dps_get_16bit(4) * 0.01f;
-  this->publish_state_(this->output_voltage_sensor_, voltage);
+  if (voltage != this->voltage_previous) {
+    ESP_LOGI(TAG, "Voltage: %.2f -> %.2f", this->voltage_previous, voltage);
+    this->voltage_previous = voltage;
+    this->publish_state_(this->output_voltage_sensor_, voltage);
+  }
+  //this->publish_state_(this->output_voltage_sensor_, voltage);
 
   //   6    0x00 0xED        Output current display value     0237 * 0.01 = 2.37A           0.01 A
   float current = (float) dps_get_16bit(6) * this->current_resolution_factor();
-  this->publish_state_(this->output_current_sensor_, current);
+  if (current != this->current_previous) {
+    ESP_LOGI(TAG, "Current: %.2f -> %.2f", this->current_previous, current);
+    this->current_previous = current;
+    this->publish_state_(this->output_current_sensor_, current);
+  }
+  //this->publish_state_(this->output_current_sensor_, current);
 
   //   8    0x21 0x4F        Output power display value       8527 * 0.01 = 85.27W          0.01 W
   //
@@ -140,10 +155,14 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   // We therefore calculate the measurement instead of using the power value of the response
   //
   // this->publish_state_(this->output_power_sensor_, (float) dps_get_16bit(8) * 0.01f);
-  this->publish_state_(this->output_power_sensor_, voltage * current);
+  float wattage = voltage * current;
+  this->publish_state_(this->output_power_sensor_, wattage);
+  //this->publish_state_(this->output_power_sensor_, voltage * current);
 
   //  10    0x10 0x87        Input voltage display value      4231 * 0.01 = 42.31V          0.01 V
-  this->publish_state_(this->input_voltage_sensor_, (float) dps_get_16bit(10) * 0.01f);
+  float input_voltage = (float) dps_get_16bit(10) * 0.01f;
+  this->publish_state_(this->input_voltage_sensor_, input_voltage);
+  //this->publish_state_(this->input_voltage_sensor_, (float) dps_get_16bit(10) * 0.01f);
 
   //  12    0x00 0x00        Key lock                         0x00: off, 0x01: on
   bool key_lock = dps_get_16bit(12) == 0x0001;
@@ -160,7 +179,9 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   }
 
   //  16    0x00 0x00        Constant current (CC mode)       0x00: CV mode, 0x01: CC mode
-  this->publish_state_(this->constant_current_mode_binary_sensor_, dps_get_16bit(16) == 0x0001);
+  uint16_t constant_current_mode = dps_get_16bit(16) == 0x0001;
+  this->publish_state_(this->constant_current_mode_binary_sensor_, constant_current_mode);
+  //this->publish_state_(this->constant_current_mode_binary_sensor_, dps_get_16bit(16) == 0x0001);
 
   //  18    0x00 0x01        Switch output state              0x00: off, 0x01: on
   bool output = dps_get_16bit(18) == 0x0001;
@@ -168,11 +189,15 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   this->publish_state_(this->output_switch_, output);
 
   //  20    0x00 0x00        Backlight brightness level       0...5
-  this->publish_state_(this->backlight_brightness_sensor_, dps_get_16bit(20) * 20.0f);
+  float backlight_brightness = dps_get_16bit(20) * 20.0f;
+  this->publish_state_(this->backlight_brightness_sensor_, backlight_brightness);
+  //this->publish_state_(this->backlight_brightness_sensor_, dps_get_16bit(20) * 20.0f);
 
   //  22    0x13 0x9C        Product model                    5020 = DPS5020
   //  24    0x00 0x11        Firmware version                 17 * 0.1 = 1.7
-  this->publish_state_(this->firmware_version_sensor_, dps_get_16bit(24) * 0.1f);
+  float firmware_version = dps_get_16bit(24) * 0.1f;
+  this->publish_state_(this->firmware_version_sensor_, firmware_version);
+  //this->publish_state_(this->firmware_version_sensor_, dps_get_16bit(24) * 0.1f);
 }
 
 void Dps::update() {
