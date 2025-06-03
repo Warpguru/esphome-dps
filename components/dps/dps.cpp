@@ -156,7 +156,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   //
   // this->publish_state_(this->output_power_sensor_, (float) dps_get_16bit(8) * 0.01f);
   float wattage = voltage * current;
-  if (wattage != this->wattage_previous) {
+  if ((wattage != this->wattage_previous) || (counter_status == 0)) {
     ESP_LOGI(TAG, "Wattage: %.2f -> %.2f", this->wattage_previous, wattage);
     this->wattage_previous = wattage;
     this->publish_state_(this->output_power_sensor_, wattage);
@@ -165,7 +165,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
 
   //  10    0x10 0x87        Input voltage display value      4231 * 0.01 = 42.31V          0.01 V
   float input_voltage = (float) dps_get_16bit(10) * 0.01f;
-  if (input_voltage != this->input_voltage_previous) {
+  if ((input_voltage != this->input_voltage_previous) || (counter_status == 0)) {
     ESP_LOGI(TAG, "Input_voltage: %.2f -> %.2f", this->input_voltage_previous, input_voltage);
     this->input_voltage_previous = input_voltage;
     this->publish_state_(this->input_voltage_sensor_, input_voltage);
@@ -174,7 +174,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
 
   //  12    0x00 0x00        Key lock                         0x00: off, 0x01: on
   bool key_lock = dps_get_16bit(12) == 0x0001;
-  if (key_lock != this->key_lock_previous) {
+  if ((key_lock != this->key_lock_previous) || (counter_status == 0)) {
     ESP_LOGI(TAG, "Key lock: %s -> %s", (this->key_lock_previous ? "On" : "Off"), (key_lock ? "On" : "Off"));
     this->key_lock_previous = key_lock;
     this->publish_state_(this->key_lock_binary_sensor_, key_lock);
@@ -184,7 +184,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   //  14    0x00 0x00        Protection status                0x00: normal, 0x01: over-voltage,
   //                                                          0x02: over-current, 0x03: over-power
   uint16_t raw_protection_status = data[14];
-  if (raw_protection_status != this->raw_protection_status_previous) {
+  if ((raw_protection_status != this->raw_protection_status_previous) || (counter_status == 0)) {
     ESP_LOGI(TAG, "Protection_status: 0x%02x -> 0x%02x", raw_protection_status_previous, raw_protection_status);
     this->raw_protection_status_previous = raw_protection_status;
     if (raw_protection_status < PROTECTION_STATUS_SIZE) {
@@ -196,12 +196,21 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
 
   //  16    0x00 0x00        Constant current (CC mode)       0x00: CV mode, 0x01: CC mode
   uint16_t constant_current_mode = dps_get_16bit(16) == 0x0001;
-  this->publish_state_(this->constant_current_mode_binary_sensor_, constant_current_mode);
+  if ((constant_current_mode != this->constant_current_mode_previous) || (counter_status == 0)) {
+    if (constant_current_mode == 0x00) {
+      ESP_LOGI(TAG, "CV_mode: 0x%02x -> 0x%02x", constant_current_mode_previous, constant_current_mode);
+    }
+    if (constant_current_mode == 0x01) {
+      ESP_LOGI(TAG, "CC_mode: 0x%02x -> 0x%02x", constant_current_mode_previous, constant_current_mode);
+    }
+    this->constant_current_mode_previous = constant_current_mode;
+    this->publish_state_(this->constant_current_mode_binary_sensor_, constant_current_mode);
+  }
   //this->publish_state_(this->constant_current_mode_binary_sensor_, dps_get_16bit(16) == 0x0001);
 
   //  18    0x00 0x01        Switch output state              0x00: off, 0x01: on
   bool output = dps_get_16bit(18) == 0x0001;
-  if (output != this->output_previous) {
+  if ((output != this->output_previous) || (counter_status == 0)) {
     ESP_LOGI(TAG, "Output: %s -> %s", (this->output_previous ? "On" : "Off"), (output ? "On" : "Off"));
     this->output_previous = output;
     this->publish_state_(this->output_binary_sensor_, output);
@@ -210,7 +219,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
 
   //  20    0x00 0x00        Backlight brightness level       0...5
   float backlight_brightness = dps_get_16bit(20) * 20.0f;
-  if (backlight_brightness != this->backlight_brightness_previous) {
+  if ((backlight_brightness != this->backlight_brightness_previous) || (counter_status == 0)) {
     ESP_LOGI(TAG, "Backlight_brightness: %.1f -> %.1f", this->backlight_brightness_previous, backlight_brightness);
     this->backlight_brightness_previous = backlight_brightness;
     this->publish_state_(this->backlight_brightness_sensor_, backlight_brightness);
@@ -220,7 +229,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
   //  22    0x13 0x9C        Product model                    5020 = DPS5020
   //  24    0x00 0x11        Firmware version                 17 * 0.1 = 1.7
   float firmware_version = dps_get_16bit(24) * 0.1f;
-  if (firmware_version != this->firmware_version_previous) {
+  if ((firmware_version != this->firmware_version_previous) || (counter_status == 0)) {
     ESP_LOGI(TAG, "Firmware_version: %.1f -> %.1f", this->firmware_version_previous, firmware_version);
     this->firmware_version_previous = firmware_version;
     this->publish_state_(this->firmware_version_sensor_, firmware_version);
