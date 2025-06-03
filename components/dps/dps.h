@@ -115,8 +115,14 @@ class Dps : public PollingComponent, public modbus::ModbusDevice {
   float current_setting_previous = 0.0;
   float voltage_previous = 0.0;
   float current_previous = 0.0;
+  float wattage_previous = 0.0;
+  float input_voltage_previous = 0.0;
   bool key_lock_previous = false;
+  uint16_t raw_protection_status_previous = 0;
+  uint16_t constant_current_mode_previous = 0;
   bool output_previous = false;
+  float backlight_brightness_previous = 0.0;
+  float firmware_version_previous = 0.0;
   // <<<
   void on_status_data_(const std::vector<uint8_t> &data);
   void on_acknowledge_data_(const std::vector<uint8_t> &data);
