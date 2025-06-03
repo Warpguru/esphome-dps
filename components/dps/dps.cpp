@@ -60,12 +60,7 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
     return (uint16_t(data[i + 0]) << 8) | (uint16_t(data[i + 1]) << 0);
   };
 
-  ESP_LOGI(TAG, "Status frame received");
-  this->counter_status++;
-  if (this->counter_status > 30) {
-    this->counter_status = 0;
-    ESP_LOGI(TAG, "Status frame counter reset");
-  }
+  ESP_LOGD(TAG, "Status frame received");
 
   // Set device model & current resolution based on reported model
   uint16_t model_number = dps_get_16bit(22);
@@ -235,6 +230,12 @@ void Dps::on_status_data_(const std::vector<uint8_t> &data) {
     this->publish_state_(this->firmware_version_sensor_, firmware_version);
   }
   //this->publish_state_(this->firmware_version_sensor_, dps_get_16bit(24) * 0.1f);
+
+  // Update status frame counter
+  this->counter_status++;
+  if (this->counter_status > 30) {
+    this->counter_status = 0;
+  }  
 }
 
 void Dps::update() {
